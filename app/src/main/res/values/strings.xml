@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">ArsenalNews</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="info_news_list_load_error">Load Error...</string>
+    <string name="title_activity_artical">ArticalActivity</string>
+
+    <string name="test_artical_content">这名埃及球员以500万英镑的身价从巴塞尔转会而来，并在后腰位置上为枪手的防守提供了稳定保障。
+
+科奎林在接受《伦敦晚旗报》采访时表示：“他表现得很好，他对球队来讲是个很好的补充。他真的适应得很快，你别忘记他才来到这里两个多月。我认为他在对阵巴塞罗那的时候表现的真好，同样在对阵埃弗顿的比赛也是这样。”</string>
+</resources>

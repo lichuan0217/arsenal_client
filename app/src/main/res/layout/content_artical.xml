@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/margin_8dp"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="top.lemonsoda.arsenalnews.view.activity.ArticalActivity"
+    tools:showIn="@layout/activity_artical">
+
+    <TextView
+        android:id="@+id/tv_artical_source"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+        android:text="来源"
+        android:textSize="16sp"
+        android:layout_marginBottom="@dimen/margin_8dp"/>
+
+    <TextView
+        android:id="@+id/tv_artical_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+        android:text="2016-01-02"
+        android:textSize="16sp"
+        android:layout_marginBottom="@dimen/margin_16dp"/>
+
+    <TextView
+        android:id="@+id/tv_artical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/test_artical_content"
+        style="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="20sp"/>
+
+    <TextView
+        android:id="@+id/tv_artical_editor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+        android:text="(编辑)"
+        android:textSize="16sp"
+        android:layout_marginTop="@dimen/margin_8dp"/>
+
+</LinearLayout>
