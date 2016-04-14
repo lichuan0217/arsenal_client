@@ -1,5 +1,11 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -14,6 +20,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+
+import org.sufficientlysecure.htmltextview.HtmlTextView;
+import org.w3c.dom.Text;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -83,7 +94,9 @@ public class ArticalActivity extends AppCompatActivity {
                             public void call(NewDetail newDetail) {
                                 Log.d(TAG, newDetail.getPicture_src());
                                 Log.d(TAG, newDetail.getContent());
-                                mArticalContent.setText(Html.fromHtml(newDetail.getContent()));
+                                Log.d(TAG, "type: " + newDetail.getType());
+                                Log.d(TAG, "video: " + newDetail.getVideo());
+                                mArticalContent.setText(Html.fromHtml(newDetail.getContent(), new ImageGetter(mArticalContent, ArticalActivity.this), null));
                                 mArticalSource.setText("来源 " + newDetail.getSource());
                                 mArticalDate.setText(newDetail.getDate());
                                 mArticalEditor.setText(newDetail.getEditor());
@@ -104,6 +117,62 @@ public class ArticalActivity extends AppCompatActivity {
                             }
                         }
                 );
+    }
+
+    private class ImageGetter implements Html.ImageGetter{
+
+        TextView container;
+        Context context;
+        int width;
+
+        public ImageGetter(TextView t, Context c){
+            container = t;
+            context = c;
+            width = c.getResources().getDisplayMetrics().widthPixels;
+        }
+
+        @Override
+        public Drawable getDrawable(String source) {
+            Log.d(TAG, "url: " + source);
+
+            final URLDrawable urlDrawable = new URLDrawable();
+//            Drawable drawable = getResources().getDrawable(R.mipmap.placeholder);
+//            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+//            urlDrawable.drawable = drawable;
+
+            Glide.with(ArticalActivity.this)
+                    .load(source)
+                    .asBitmap()
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+
+                            float scaleWidth = ((float)width)/resource.getWidth();
+                            Matrix matrix = new Matrix();
+                            matrix.postScale(scaleWidth, scaleWidth);
+                            resource = Bitmap.createBitmap(resource, 0, 0, resource.getWidth(), resource.getHeight(), matrix, true);
+                            urlDrawable.bitmap = resource;
+                            urlDrawable.setBounds(0, 0, resource.getWidth(), resource.getHeight());
+
+                            container.invalidate();
+                            container.setText(container.getText());
+                        }
+                    });
+
+
+            return urlDrawable;
+        }
+    }
+
+    private class URLDrawable extends BitmapDrawable {
+        protected Bitmap bitmap;
+
+        @Override
+        public void draw(Canvas canvas) {
+            if (bitmap != null) {
+                canvas.drawBitmap(bitmap, 0, 0, getPaint());
+            }
+        }
     }
 
 }

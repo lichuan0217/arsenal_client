@@ -11,6 +11,25 @@ public class NewDetail {
     private String header;
     private String editor;
     private String date;
+    private String type;
+    private String video;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getVideo() {
+        return video;
+    }
+
+    public void setVideo(String video) {
+        this.video = video;
+    }
+
 
     public String getPicture_src() {
         return picture_src;
