@@ -28,13 +28,19 @@
         android:textSize="16sp"
         android:layout_marginBottom="@dimen/margin_16dp"/>
 
-    <TextView
-        android:id="@+id/tv_artical"
+    <!--<TextView-->
+        <!--android:id="@+id/tv_artical"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:text="@string/test_artical_content"-->
+        <!--style="@style/TextAppearance.AppCompat.Body1"-->
+        <!--android:textSize="20sp"/>-->
+
+    <WebView
+        android:id="@+id/wv_artical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/test_artical_content"
-        style="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="20sp"/>
+        android:layout_height="wrap_content"/>
+
 
     <TextView
         android:id="@+id/tv_artical_editor"
@@ -44,5 +50,6 @@
         android:text="(编辑)"
         android:textSize="16sp"
         android:layout_marginTop="@dimen/margin_8dp"/>
+
 
 </LinearLayout>

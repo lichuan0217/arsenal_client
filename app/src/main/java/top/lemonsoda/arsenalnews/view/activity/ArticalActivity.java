@@ -15,6 +15,8 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,8 +25,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
-import org.sufficientlysecure.htmltextview.HtmlTextView;
-import org.w3c.dom.Text;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -46,6 +46,9 @@ public class ArticalActivity extends AppCompatActivity {
     private TextView mArticalSource;
     private TextView mArticalDate;
     private TextView mArticalEditor;
+
+
+    private WebView mWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,12 +73,25 @@ public class ArticalActivity extends AppCompatActivity {
             mArticalId = getIntent().getStringExtra("ArticalId");
         }
 
-        mArticalContent = (TextView)findViewById(R.id.tv_artical);
-        mArticalSource = (TextView)findViewById(R.id.tv_artical_source);
-        mArticalEditor = (TextView)findViewById(R.id.tv_artical_editor);
-        mArticalDate = (TextView)findViewById(R.id.tv_artical_date);
-        mCollapsingToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing_toolbar_layout);
-        mArticalImage = (ImageView)findViewById(R.id.iv_artical_header);
+//        mArticalContent = (TextView) findViewById(R.id.tv_artical);
+        mArticalSource = (TextView) findViewById(R.id.tv_artical_source);
+        mArticalEditor = (TextView) findViewById(R.id.tv_artical_editor);
+        mArticalDate = (TextView) findViewById(R.id.tv_artical_date);
+        mCollapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar_layout);
+        mArticalImage = (ImageView) findViewById(R.id.iv_artical_header);
+
+        mWebView = (WebView) findViewById(R.id.wv_artical);
+        WebSettings webSettings = mWebView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+//        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
+//        webSettings.setUseWideViewPort(true);
+//        if (PrefUtils.isEnableCache()) {
+//            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+//            webSettings.setAppCacheEnabled(true);
+//            webSettings.setDatabaseEnabled(true);
+//        }
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setDefaultTextEncodingName("utf-8");
 
 
         mCollapsingToolbarLayout.setTitle(mHeader);
@@ -83,7 +99,7 @@ public class ArticalActivity extends AppCompatActivity {
     }
 
 
-    private void loadArtical(String id){
+    private void loadArtical(String id) {
         Log.d(TAG, "load artical" + id);
         NetworkManager.newsItemService.getArtical(id)
                 .subscribeOn(Schedulers.io())
@@ -96,7 +112,12 @@ public class ArticalActivity extends AppCompatActivity {
                                 Log.d(TAG, newDetail.getContent());
                                 Log.d(TAG, "type: " + newDetail.getType());
                                 Log.d(TAG, "video: " + newDetail.getVideo());
-                                mArticalContent.setText(Html.fromHtml(newDetail.getContent(), new ImageGetter(mArticalContent, ArticalActivity.this), null));
+//                                mArticalContent.setText(
+//                                        Html.fromHtml(
+//                                                newDetail.getContent(),
+//                                                new ImageGetter(mArticalContent, ArticalActivity.this),
+//                                                null));
+                                mWebView.loadData(buildHtmlContent(newDetail.getContent()), "text/html; charset=uft-8", "utf-8");
                                 mArticalSource.setText("来源 " + newDetail.getSource());
                                 mArticalDate.setText(newDetail.getDate());
                                 mArticalEditor.setText(newDetail.getEditor());
@@ -119,13 +140,13 @@ public class ArticalActivity extends AppCompatActivity {
                 );
     }
 
-    private class ImageGetter implements Html.ImageGetter{
+    private class ImageGetter implements Html.ImageGetter {
 
         TextView container;
         Context context;
         int width;
 
-        public ImageGetter(TextView t, Context c){
+        public ImageGetter(TextView t, Context c) {
             container = t;
             context = c;
             width = c.getResources().getDisplayMetrics().widthPixels;
@@ -147,7 +168,7 @@ public class ArticalActivity extends AppCompatActivity {
                         @Override
                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
 
-                            float scaleWidth = ((float)width)/resource.getWidth();
+                            float scaleWidth = ((float) width) / resource.getWidth();
                             Matrix matrix = new Matrix();
                             matrix.postScale(scaleWidth, scaleWidth);
                             resource = Bitmap.createBitmap(resource, 0, 0, resource.getWidth(), resource.getHeight(), matrix, true);
@@ -173,6 +194,27 @@ public class ArticalActivity extends AppCompatActivity {
                 canvas.drawBitmap(bitmap, 0, 0, getPaint());
             }
         }
+    }
+
+
+    private String buildHtmlContent(String content) {
+        String head = "<head>\n" +
+                "<meta charset=\"utf-8\">\n" +
+                "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\">\n" +
+                "<title>" + mHeader + "</title>\n" +
+                "<meta name=\"viewport\" content=\"user-scalable=no, width=device-width\">\n" +
+                "<style type=\"text/css\">" +
+                "img{" +
+                "max-width:100%;" +
+                "height:auto}" +
+                "</style>\n" +
+                "<base target=\"_blank\">\n" +
+                "</head>";
+        String bodyStart = "<body>";
+        String bodyEnd = "</body>";
+
+        return head + bodyStart + content.replaceAll("<div class=\"img-place-holder\"></div>", "") + bodyEnd;
+
     }
 
 }

@@ -49,7 +49,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:scaleType="centerCrop"
-                android:src="@mipmap/demo_item" />
+                android:src="@mipmap/placeholder" />
 
 
         </RelativeLayout>

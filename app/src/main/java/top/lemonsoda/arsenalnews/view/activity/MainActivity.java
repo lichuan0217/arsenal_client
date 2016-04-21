@@ -18,6 +18,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.jpush.android.api.JPushInterface;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private static final String TAG = MainActivity.class.getCanonicalName();
 
     private LinearLayoutManager mLayoutManager;
-    private List<NewItem> mNewsList =new ArrayList<NewItem>();
+    private List<NewItem> mNewsList = new ArrayList<NewItem>();
     private NewsListAdapter mAdapter;
     private RecyclerView mNewsListRecyclerView;
     private SwipeRefreshLayout mNewsListSwipeRefreshLayout;
@@ -54,8 +55,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         });
 
 //        initData();
-        mNewsListSwipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.srl_news_item);
-        mNewsListRecyclerView = (RecyclerView)findViewById(R.id.rv_news_list);
+        mNewsListSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.srl_news_item);
+        mNewsListRecyclerView = (RecyclerView) findViewById(R.id.rv_news_list);
 
         mNewsListSwipeRefreshLayout.setOnRefreshListener(this);
 
@@ -69,11 +70,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         onRefresh();
     }
 
-    private void initData(){
-        for(int i = 0; i < 10; ++i){
-            NewItem bean = new NewItem();
-            mNewsList.add(bean);
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        JPushInterface.onResume(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        JPushInterface.onPause(this);
     }
 
     @Override
