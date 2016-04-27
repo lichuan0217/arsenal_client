@@ -24,6 +24,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
+import top.lemonsoda.arsenalnews.domain.db.ItemDatabaseManager;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.NewsListAdapter;
 
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private RecyclerView mNewsListRecyclerView;
     private SwipeRefreshLayout mNewsListSwipeRefreshLayout;
     private int mItemPage;
+    private ItemDatabaseManager mItemDatabaseManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +68,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mAdapter = new NewsListAdapter(this, mNewsList);
         mAdapter.setOnNewsItemClickListener(this);
         mNewsListRecyclerView.setAdapter(mAdapter);
+
+        mItemDatabaseManager = new ItemDatabaseManager(this);
 
         onRefresh();
     }
@@ -124,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                                 if (!mNewsList.isEmpty()) {
                                     mNewsList.clear();
                                 }
+                                saveData(newItems);
                                 mNewsList.addAll(newItems);
                                 mAdapter.notifyDataSetChanged();
                                 mItemPage++;
@@ -141,6 +146,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                             }
                         }
                 );
+    }
+
+    private void saveData(List<NewItem> newItems){
+        mItemDatabaseManager.saveItemsToDB(newItems);
     }
 
     @Override
