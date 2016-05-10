@@ -2,6 +2,7 @@ package top.lemonsoda.arsenalnews.domain.db;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
@@ -23,13 +24,17 @@ public class ItemDatabaseManager {
 
     public void saveItemsToDB(List<NewItem> newItems) {
         Log.d("DB", "Save Items to DB");
+        SQLiteDatabase db = sqLiteHelper.getWritableDatabase();
+        db.delete(sqLiteHelper.ITEM_TABLE_NAME, null, null);
         for (NewItem item: newItems) {
-            saveItemToDB(item);
+            saveItemToDB(item, db);
         }
+        db.close();
     }
 
-    public void saveItemToDB(NewItem newItem){
-        SQLiteDatabase db = sqLiteHelper.getWritableDatabase();
+    public void saveItemToDB(NewItem newItem, SQLiteDatabase db){
+        Log.d("DB", "store item: " + newItem.getHeader());
+
         ContentValues values = new ContentValues();
         values.put("id", newItem.getArticalId());
         values.put("header", newItem.getHeader());
@@ -43,6 +48,22 @@ public class ItemDatabaseManager {
                 values,
                 SQLiteDatabase.CONFLICT_IGNORE
         );
+    }
+
+    public void getItemFromDB(List<NewItem> items) {
+        SQLiteDatabase db = sqLiteHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from " + sqLiteHelper.ITEM_TABLE_NAME + "", null);
+        while (cursor.moveToNext()) {
+            NewItem item =  new NewItem();
+            item.setArticalId(cursor.getString(cursor.getColumnIndex("id")));
+            item.setHeader(cursor.getString(cursor.getColumnIndex("header")));
+            item.setThumbnail(cursor.getString(cursor.getColumnIndex("thumbnail")));
+            item.setSource(cursor.getString(cursor.getColumnIndex("source")));
+            item.setContent(cursor.getString(cursor.getColumnIndex("content")));
+            item.setFullTextUrl(cursor.getString(cursor.getColumnIndex("url")));
+            items.add(item);
+        }
+        cursor.close();
         db.close();
     }
 }

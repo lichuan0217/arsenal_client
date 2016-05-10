@@ -14,6 +14,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -31,6 +33,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewDetail;
+import top.lemonsoda.arsenalnews.domain.utils.ShareUtils;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 
 public class ArticalActivity extends AppCompatActivity {
@@ -40,7 +43,8 @@ public class ArticalActivity extends AppCompatActivity {
     private String mHeader;
     private String mArticalId;
 
-    private CollapsingToolbarLayout mCollapsingToolbarLayout;
+    //    private CollapsingToolbarLayout mCollapsingToolbarLayout;
+    private net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout mMultiLineToolbarLayout;
     private ImageView mArticalImage;
     private TextView mArticalContent;
     private TextView mArticalSource;
@@ -77,7 +81,10 @@ public class ArticalActivity extends AppCompatActivity {
         mArticalSource = (TextView) findViewById(R.id.tv_artical_source);
         mArticalEditor = (TextView) findViewById(R.id.tv_artical_editor);
         mArticalDate = (TextView) findViewById(R.id.tv_artical_date);
-        mCollapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar_layout);
+//        mCollapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar_layout);
+        mMultiLineToolbarLayout =
+                (net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout)
+                        findViewById(R.id.collapsing_toolbar_layout);
         mArticalImage = (ImageView) findViewById(R.id.iv_artical_header);
 
         mWebView = (WebView) findViewById(R.id.wv_artical);
@@ -94,7 +101,8 @@ public class ArticalActivity extends AppCompatActivity {
         webSettings.setDefaultTextEncodingName("utf-8");
 
 
-        mCollapsingToolbarLayout.setTitle(mHeader);
+//        mCollapsingToolbarLayout.setTitle(mHeader);
+        mMultiLineToolbarLayout.setTitle(mHeader);
         loadArtical(mArticalId);
     }
 
@@ -217,4 +225,22 @@ public class ArticalActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_article, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_share) {
+            ShareUtils.share(this);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 }

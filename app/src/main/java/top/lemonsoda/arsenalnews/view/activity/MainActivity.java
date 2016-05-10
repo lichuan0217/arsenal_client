@@ -4,8 +4,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -13,6 +17,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -40,12 +45,18 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private int mItemPage;
     private ItemDatabaseManager mItemDatabaseManager;
 
+    private DrawerLayout mDrawerLayout;
+    private NavigationView mNavigationView;
+    private View mHeaderView;
+    private ImageView mImgAvatar;
+    private Toolbar mToolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -56,11 +67,18 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         });
 
-//        initData();
         mNewsListSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.srl_news_item);
         mNewsListRecyclerView = (RecyclerView) findViewById(R.id.rv_news_list);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
+        mHeaderView = mNavigationView.getHeaderView(0);
+        mImgAvatar = (ImageView)mHeaderView.findViewById(R.id.img_avatar);
+        setupNavigationView();
+        setupToggle();
 
         mNewsListSwipeRefreshLayout.setOnRefreshListener(this);
+        mItemDatabaseManager = new ItemDatabaseManager(this);
+        initData();
 
         mLayoutManager = new LinearLayoutManager(this);
         mNewsListRecyclerView.setLayoutManager(mLayoutManager);
@@ -69,7 +87,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mAdapter.setOnNewsItemClickListener(this);
         mNewsListRecyclerView.setAdapter(mAdapter);
 
-        mItemDatabaseManager = new ItemDatabaseManager(this);
 
         onRefresh();
     }
@@ -95,17 +112,45 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setupNavigationView() {
+        mImgAvatar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goToLogin();
+            }
+        });
+        mNavigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem item) {
+                        int id = item.getItemId();
+                        switch (id) {
+                        }
+                        mDrawerLayout.closeDrawer(GravityCompat.START);
+                        return true;
+                    }
+                });
+    }
+
+    private void setupToggle() {
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, mDrawerLayout, mToolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawerLayout.setDrawerListener(toggle);
+        toggle.syncState();
+    }
+
+    private void initData() {
+        mItemDatabaseManager.getItemFromDB(mNewsList);
     }
 
     @Override
@@ -148,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 );
     }
 
-    private void saveData(List<NewItem> newItems){
+    private void saveData(List<NewItem> newItems) {
         mItemDatabaseManager.saveItemsToDB(newItems);
     }
 
@@ -159,6 +204,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         Intent intent = new Intent(MainActivity.this, ArticalActivity.class);
         intent.putExtra("Header", header);
         intent.putExtra("ArticalId", articalId);
+        startActivity(intent);
+    }
+
+    private void goToLogin(){
+        Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
     }
 }
