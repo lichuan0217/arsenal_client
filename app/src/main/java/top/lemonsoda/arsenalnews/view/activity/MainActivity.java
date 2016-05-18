@@ -1,6 +1,8 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
@@ -14,12 +16,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +36,10 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
+import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.db.ItemDatabaseManager;
+import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
+import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.NewsListAdapter;
 
@@ -49,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private NavigationView mNavigationView;
     private View mHeaderView;
     private ImageView mImgAvatar;
+    private TextView mTextViewUserName;
     private Toolbar mToolbar;
 
     @Override
@@ -72,7 +83,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
         mHeaderView = mNavigationView.getHeaderView(0);
-        mImgAvatar = (ImageView)mHeaderView.findViewById(R.id.img_avatar);
+        mImgAvatar = (ImageView) mHeaderView.findViewById(R.id.img_avatar);
+        mTextViewUserName = (TextView) mHeaderView.findViewById(R.id.tv_user_name);
         setupNavigationView();
         setupToggle();
 
@@ -121,21 +133,51 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         return super.onOptionsItemSelected(item);
     }
 
+    private Bitmap getLocalBitmap(String file) {
+        try {
+            FileInputStream inputStream = new FileInputStream(file);
+            return BitmapFactory.decodeStream(inputStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private void setupNavigationView() {
+        User user = UserInfoKeeper.readUserInfo(this);
+        if (!TextUtils.isEmpty(user.getScreen_name())) {
+            mTextViewUserName.setText(user.getScreen_name());
+        }
+
+        File avatar_file = new File(Constants.AVATAR_FILE);
+        if (avatar_file.exists()) {
+            Bitmap bitmap = getLocalBitmap(Constants.AVATAR_FILE);
+            if (bitmap != null) {
+                mImgAvatar.setImageBitmap(bitmap);
+            }
+        }
+
         mImgAvatar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                goToLogin();
+                mDrawerLayout.closeDrawer(GravityCompat.START);
+                switchActivity(LoginActivity.class);
             }
         });
         mNavigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem item) {
-                        int id = item.getItemId();
-                        switch (id) {
+                        if (item.isChecked()) {
+                            item.setChecked(false);
+                        } else {
+                            item.setChecked(true);
                         }
                         mDrawerLayout.closeDrawer(GravityCompat.START);
+                        switch (item.getItemId()) {
+                            case R.id.nav_about:
+                                return switchActivity(AboutActivity.class);
+                        }
                         return true;
                     }
                 });
@@ -207,8 +249,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         startActivity(intent);
     }
 
-    private void goToLogin(){
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+    private boolean switchActivity(Class clazz) {
+        startActivity(new Intent(MainActivity.this, clazz));
+        return true;
     }
 }

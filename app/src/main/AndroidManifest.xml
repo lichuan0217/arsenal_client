@@ -153,6 +153,22 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
         </activity>
+
+        <!-- Weibo Login Configuration -->
+        <activity
+            android:name="com.sina.weibo.sdk.component.WeiboSdkBrowser"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"></activity>
+        <activity
+            android:name=".view.activity.AboutActivity"
+            android:label="@string/title_activity_about"
+            android:parentActivityName=".view.activity.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

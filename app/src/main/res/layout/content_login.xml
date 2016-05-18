@@ -18,5 +18,36 @@
         android:text="@string/login_weibo_text"
         android:id="@+id/btn_login_weibo"/>
 
+    <de.hdodenhof.circleimageview.CircleImageView
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/img_login_avatar"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        app:civ_border_width="2dp"
+        app:civ_border_color="#ff000000"
+        android:src="@mipmap/avatar"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tv_login_username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/img_login_avatar"
+        android:text="UserName"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Title"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:gravity="center_horizontal"
+        android:visibility="gone"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/logout_weibo_text"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:id="@+id/btn_logout_weibo"
+        android:layout_below="@id/tv_login_username"
+        android:visibility="gone"/>
+
 
 </RelativeLayout>

@@ -7,7 +7,6 @@ import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -26,7 +25,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
-
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -213,8 +211,10 @@ public class ArticalActivity extends AppCompatActivity {
                 "<meta name=\"viewport\" content=\"user-scalable=no, width=device-width\">\n" +
                 "<style type=\"text/css\">" +
                 "img{" +
+                "display: inline;" +
                 "max-width:100%;" +
-                "height:auto}" +
+                "height: auto" +
+                "}" +
                 "</style>\n" +
                 "<base target=\"_blank\">\n" +
                 "</head>";
@@ -233,14 +233,14 @@ public class ArticalActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_share) {
-            ShareUtils.share(this);
-            return true;
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                this.finish();
+                return true;
+            case R.id.action_share:
+                ShareUtils.share(this);
+                return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }
