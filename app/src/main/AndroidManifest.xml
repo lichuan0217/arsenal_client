@@ -43,7 +43,7 @@
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity
-            android:name=".view.activity.ArticalActivity"
+            android:name=".view.activity.ArticleActivity"
             android:label="@string/title_activity_artical"
             android:parentActivityName=".view.activity.MainActivity"
             android:theme="@style/AppTheme.NoActionBar">

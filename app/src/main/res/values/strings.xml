@@ -14,6 +14,8 @@
     <string name="login_weibo_text">登录新浪微博</string>
     <string name="logout_weibo_text">登出新浪微博</string>
 
+    <string name="favorite_login_prompt">请登录后收藏</string>
+    <string name="favorite_error_prompt">收藏失败</string>
     <string name="favorite_prompt">已收藏</string>
     <string name="favorite_cancel_prompt">已取消收藏</string>
 

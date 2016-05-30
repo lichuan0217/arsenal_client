@@ -12,8 +12,7 @@ import org.json.JSONObject;
 import java.util.Iterator;
 
 import cn.jpush.android.api.JPushInterface;
-import top.lemonsoda.arsenalnews.view.activity.ArticalActivity;
-import top.lemonsoda.arsenalnews.view.activity.MainActivity;
+import top.lemonsoda.arsenalnews.view.activity.ArticleActivity;
 
 /**
  * Created by Chuan on 4/19/16.
@@ -35,7 +34,7 @@ public class NewsReceiver extends BroadcastReceiver {
             Log.d(TAG, "[NewsReceiver] 用户点击打开了通知");
 
             //打开自定义的Activity
-            Intent i = new Intent(context, ArticalActivity.class);
+            Intent i = new Intent(context, ArticleActivity.class);
             String extras = bundle.getString(JPushInterface.EXTRA_EXTRA);
             Log.d(TAG, "[NewsReceiver] Extra Extra: " + extras);
             try {

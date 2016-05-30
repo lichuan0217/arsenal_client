@@ -6,9 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -33,9 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
+import rx.Subscriber;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
 import top.lemonsoda.arsenalnews.bean.User;
@@ -69,6 +65,8 @@ public class MainActivity extends AppCompatActivity
     private IntentFilter mIntentFilter;
     private LoginEventReceiver mReceiver;
     private LocalBroadcastManager mLocalBroadcastManager;
+
+    private Subscriber<List<NewItem>> newsItemSubscriber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -194,34 +192,38 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRefresh() {
         mItemPage = 0;
-        NetworkManager.newsItemService.getNewsItem(mItemPage)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        new Action1<List<NewItem>>() {
-                            @Override
-                            public void call(List<NewItem> newItems) {
-                                if (!mNewsList.isEmpty()) {
-                                    mNewsList.clear();
-                                }
-                                saveData(newItems);
-                                mNewsList.addAll(newItems);
-                                mAdapter.notifyDataSetChanged();
-                                mItemPage++;
-                                mNewsListSwipeRefreshLayout.setRefreshing(false);
-                            }
-                        }, new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                mNewsListSwipeRefreshLayout.setRefreshing(false);
-                                Toast.makeText(
-                                        MainActivity.this,
-                                        R.string.info_news_list_load_error,
-                                        Toast.LENGTH_SHORT)
-                                        .show();
-                            }
-                        }
-                );
+        getNewsItem(mItemPage);
+    }
+
+    private void getNewsItem(int page){
+        newsItemSubscriber = new Subscriber<List<NewItem>>() {
+            @Override
+            public void onCompleted() {
+                mNewsListSwipeRefreshLayout.setRefreshing(false);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                mNewsListSwipeRefreshLayout.setRefreshing(false);
+                Toast.makeText(
+                        MainActivity.this,
+                        R.string.info_news_list_load_error,
+                        Toast.LENGTH_SHORT)
+                        .show();
+            }
+
+            @Override
+            public void onNext(List<NewItem> newItems) {
+                if (!mNewsList.isEmpty()) {
+                    mNewsList.clear();
+                }
+                saveData(newItems);
+                mNewsList.addAll(newItems);
+                mAdapter.notifyDataSetChanged();
+                mItemPage++;
+            }
+        };
+        NetworkManager.getInstance().getNewsItem(newsItemSubscriber, page);
     }
 
     private void saveData(List<NewItem> newItems) {
@@ -232,7 +234,7 @@ public class MainActivity extends AppCompatActivity
     public void onItemClick(View view, int pos) {
         String header = mNewsList.get(pos).getHeader();
         String articalId = mNewsList.get(pos).getArticalId();
-        Intent intent = new Intent(MainActivity.this, ArticalActivity.class);
+        Intent intent = new Intent(MainActivity.this, ArticleActivity.class);
         intent.putExtra(Constants.INTENT_EXTRA_HEADER, header);
         intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articalId);
         startActivity(intent);
