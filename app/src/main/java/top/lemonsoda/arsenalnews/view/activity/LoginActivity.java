@@ -1,8 +1,11 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -33,49 +36,30 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.User;
+import top.lemonsoda.arsenalnews.domain.application.App;
 import top.lemonsoda.arsenalnews.domain.preferences.AccessTokenKeeper;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
+import top.lemonsoda.arsenalnews.domain.utils.BitmapUtils;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.WeiboNetworkManager;
 
 public class LoginActivity extends AppCompatActivity {
 
-//    @BindView(R.id.toolbar)
-//    Toolbar toolbar;
-
-    //    @BindView(R.id.btn_login_weibo)
     Button mWeiboLogin;
-
-    //    @BindView(R.id.btn_logout_weibo)
     Button mWeiboLogout;
-
-    //    @BindView(R.id.tv_login_username)
     TextView mUserName;
-
-    //    @BindView(R.id.img_login_avatar)
     CircleImageView mAvatar;
 
     private AuthInfo mAuthInfo;
     private Oauth2AccessToken mAccessToken;
     private SsoHandler mSsoHandler;
 
-//    @OnClick(R.id.btn_login_weibo)
-//    public void onLoginClick(View view) {
-//        mSsoHandler.authorize(new AuthListener());
-//    }
-//
-//    @OnClick(R.id.btn_logout_weibo)
-//    public void onLogoutClick(View view) {
-//        AccessTokenKeeper.clear(getApplicationContext());
-//        mAccessToken = new Oauth2AccessToken();
-//    }
+    private LocalBroadcastManager mLocalBroadcastManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-//        ButterKnife.setDebug(true);
-//        ButterKnife.bind(this);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -96,6 +80,11 @@ public class LoginActivity extends AppCompatActivity {
         mWeiboLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent(Constants.LOGIN_EVENT_INTENT_ACTION);
+                intent.putExtra(Constants.INTENT_LOGIN_EXTRA_KEY, false);
+                mLocalBroadcastManager.sendBroadcast(intent);
+
+                App.getInstance().setUserLogin(false);
                 AccessTokenKeeper.clear(getApplicationContext());
                 UserInfoKeeper.clear(getApplicationContext());
                 mAccessToken = new Oauth2AccessToken();
@@ -103,6 +92,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         mAuthInfo = new AuthInfo(this, Constants.APP_KEY, Constants.REDIRECT_URL, Constants.SCOPE);
         mSsoHandler = new SsoHandler(LoginActivity.this, mAuthInfo);
 
@@ -130,32 +120,46 @@ public class LoginActivity extends AppCompatActivity {
             // Remove the avatar file
             removeImage(Constants.AVATAR_NAME);
         } else {
-            final long uid = Long.parseLong(mAccessToken.getUid());
-            WeiboNetworkManager.userService.getUser(uid, mAccessToken.getToken())
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            new Action1<User>() {
-                                @Override
-                                public void call(User user) {
-                                    UserInfoKeeper.writeUserInfo(LoginActivity.this, user);
-                                    mUserName.setText(user.getScreen_name());
-                                    Glide.with(LoginActivity.this)
-                                            .load(user.getProfile_image_url())
-                                            .asBitmap()
-                                            .centerCrop()
-                                            .into(target);
+            User user = UserInfoKeeper.readUserInfo(this);
+            File avatar_file = new File(Constants.AVATAR_FILE);
+
+            if (!TextUtils.isEmpty(user.getScreen_name()) && avatar_file.exists()) {
+                mUserName.setText(user.getScreen_name());
+                Bitmap bitmap = BitmapUtils.getLocalBitmap(Constants.AVATAR_FILE);
+                if (bitmap != null) {
+                    mAvatar.setImageBitmap(bitmap);
+                }
+            } else {
+                final long uid = Long.parseLong(mAccessToken.getUid());
+                WeiboNetworkManager.userService.getUser(uid, mAccessToken.getToken())
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                new Action1<User>() {
+                                    @Override
+                                    public void call(User user) {
+                                        UserInfoKeeper.writeUserInfo(LoginActivity.this, user);
+                                        mUserName.setText(user.getScreen_name());
+                                        Glide.with(LoginActivity.this)
+                                                .load(user.getProfile_image_url())
+                                                .asBitmap()
+                                                .centerCrop()
+                                                .into(target);
+                                        Intent intent = new Intent(Constants.LOGIN_EVENT_INTENT_ACTION);
+                                        intent.putExtra(Constants.INTENT_LOGIN_EXTRA_KEY, true);
+                                        mLocalBroadcastManager.sendBroadcast(intent);
+                                    }
+                                }, new Action1<Throwable>() {
+                                    @Override
+                                    public void call(Throwable throwable) {
+                                        Toast.makeText(
+                                                LoginActivity.this,
+                                                "Wrong in get user profile",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
                                 }
-                            }, new Action1<Throwable>() {
-                                @Override
-                                public void call(Throwable throwable) {
-                                    Toast.makeText(
-                                            LoginActivity.this,
-                                            "Wrong in get user profile",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                    );
+                        );
+            }
         }
     }
 
@@ -245,7 +249,7 @@ public class LoginActivity extends AppCompatActivity {
             mAccessToken = Oauth2AccessToken.parseAccessToken(values);
             if (mAccessToken.isSessionValid()) {
                 updateLoginView(true);
-
+                App.getInstance().setUserLogin(true);
                 // 保存 Token 到 SharedPreferences
                 AccessTokenKeeper.writeAccessToken(LoginActivity.this, mAccessToken);
                 Toast.makeText(LoginActivity.this,
@@ -286,4 +290,6 @@ public class LoginActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 }

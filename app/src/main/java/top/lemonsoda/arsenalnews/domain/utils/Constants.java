@@ -22,9 +22,14 @@ public class Constants {
                     + File.separator
                     + "img"
                     + File.separator;
-
     public static final String AVATAR_NAME = "avatar.png";
-
     public static final String AVATAR_FILE = STORAGE_PATH + AVATAR_NAME;
+
+    public static final String LOGIN_EVENT_INTENT_ACTION = "top.lemonsoda.arsenalnews.LOGIN_BROADCAST";
+    public static final String INTENT_LOGIN_EXTRA_KEY = "intent_login_status";
+
+
+    public static final String INTENT_EXTRA_HEADER = "header";
+    public static final String INTENT_EXTRA_ARTICLE_ID = "article_id";
 
 }

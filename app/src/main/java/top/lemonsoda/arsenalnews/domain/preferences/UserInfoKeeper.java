@@ -72,5 +72,6 @@ public class UserInfoKeeper {
         SharedPreferences.Editor editor = pref.edit();
         editor.clear();
         editor.commit();
+
     }
 }

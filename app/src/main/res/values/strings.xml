@@ -14,6 +14,9 @@
     <string name="login_weibo_text">登录新浪微博</string>
     <string name="logout_weibo_text">登出新浪微博</string>
 
+    <string name="favorite_prompt">已收藏</string>
+    <string name="favorite_cancel_prompt">已取消收藏</string>
+
 
     <string name="test_artical_content">这名埃及球员以500万英镑的身价从巴塞尔转会而来，并在后腰位置上为枪手的防守提供了稳定保障。
 

@@ -13,6 +13,15 @@ public class NewDetail {
     private String date;
     private String type;
     private String video;
+    private Boolean favorite;
+
+    public Boolean getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Boolean favorite) {
+        this.favorite = favorite;
+    }
 
     public String getType() {
         return type;

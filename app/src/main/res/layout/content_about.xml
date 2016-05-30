@@ -13,10 +13,10 @@
     tools:showIn="@layout/activity_about">
 
     <TextView
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Arsenal News"
-        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Title"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:text="Arsenal News" />
 
 </RelativeLayout>

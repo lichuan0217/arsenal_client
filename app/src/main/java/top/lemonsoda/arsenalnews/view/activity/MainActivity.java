@@ -1,13 +1,15 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -17,16 +19,16 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,11 +41,13 @@ import top.lemonsoda.arsenalnews.bean.NewItem;
 import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.db.ItemDatabaseManager;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
+import top.lemonsoda.arsenalnews.domain.utils.BitmapUtils;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.NewsListAdapter;
 
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener, NewsListAdapter.OnNewsItemClickListener {
+public class MainActivity extends AppCompatActivity
+        implements SwipeRefreshLayout.OnRefreshListener, NewsListAdapter.OnNewsItemClickListener {
 
     private static final String TAG = MainActivity.class.getCanonicalName();
 
@@ -62,21 +66,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private TextView mTextViewUserName;
     private Toolbar mToolbar;
 
+    private IntentFilter mIntentFilter;
+    private LoginEventReceiver mReceiver;
+    private LocalBroadcastManager mLocalBroadcastManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         mNewsListSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.srl_news_item);
         mNewsListRecyclerView = (RecyclerView) findViewById(R.id.rv_news_list);
@@ -133,17 +132,14 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         return super.onOptionsItemSelected(item);
     }
 
-    private Bitmap getLocalBitmap(String file) {
-        try {
-            FileInputStream inputStream = new FileInputStream(file);
-            return BitmapFactory.decodeStream(inputStream);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+
 
     private void setupNavigationView() {
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(Constants.LOGIN_EVENT_INTENT_ACTION);
+        mReceiver = new LoginEventReceiver();
+        mLocalBroadcastManager.registerReceiver(mReceiver, mIntentFilter);
         User user = UserInfoKeeper.readUserInfo(this);
         if (!TextUtils.isEmpty(user.getScreen_name())) {
             mTextViewUserName.setText(user.getScreen_name());
@@ -151,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         File avatar_file = new File(Constants.AVATAR_FILE);
         if (avatar_file.exists()) {
-            Bitmap bitmap = getLocalBitmap(Constants.AVATAR_FILE);
+            Bitmap bitmap = BitmapUtils.getLocalBitmap(Constants.AVATAR_FILE);
             if (bitmap != null) {
                 mImgAvatar.setImageBitmap(bitmap);
             }
@@ -160,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mImgAvatar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mDrawerLayout.closeDrawer(GravityCompat.START);
+//                mDrawerLayout.closeDrawer(GravityCompat.START);
                 switchActivity(LoginActivity.class);
             }
         });
@@ -197,13 +193,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     @Override
     public void onRefresh() {
-//        new Handler().postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                mNewsListSwipeRefreshLayout.setRefreshing(false);
-//            }
-//        }, 3000);
-
         mItemPage = 0;
         NetworkManager.newsItemService.getNewsItem(mItemPage)
                 .subscribeOn(Schedulers.io())
@@ -244,13 +233,35 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         String header = mNewsList.get(pos).getHeader();
         String articalId = mNewsList.get(pos).getArticalId();
         Intent intent = new Intent(MainActivity.this, ArticalActivity.class);
-        intent.putExtra("Header", header);
-        intent.putExtra("ArticalId", articalId);
+        intent.putExtra(Constants.INTENT_EXTRA_HEADER, header);
+        intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articalId);
         startActivity(intent);
     }
 
     private boolean switchActivity(Class clazz) {
         startActivity(new Intent(MainActivity.this, clazz));
         return true;
+    }
+
+    private class LoginEventReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean isLogin = intent.getBooleanExtra(Constants.INTENT_LOGIN_EXTRA_KEY, false);
+            if (isLogin){
+                Toast.makeText(MainActivity.this, "login", Toast.LENGTH_SHORT).show();
+                User user = UserInfoKeeper.readUserInfo(MainActivity.this);
+                mTextViewUserName.setText(user.getScreen_name());
+                Glide.with(MainActivity.this)
+                        .load(user.getProfile_image_url())
+                        .asBitmap()
+                        .centerCrop()
+                        .into(mImgAvatar);
+            } else {
+                mImgAvatar.setImageResource(R.mipmap.avatar);
+                mTextViewUserName.setText("Android Studio");
+                Toast.makeText(MainActivity.this, "logout", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

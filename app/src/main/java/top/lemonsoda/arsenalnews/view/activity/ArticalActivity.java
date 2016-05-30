@@ -26,11 +26,19 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewDetail;
+import top.lemonsoda.arsenalnews.bean.RequestFavorite;
+import top.lemonsoda.arsenalnews.bean.RequestUser;
+import top.lemonsoda.arsenalnews.bean.ResponseFavorite;
+import top.lemonsoda.arsenalnews.bean.User;
+import top.lemonsoda.arsenalnews.domain.application.App;
+import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
+import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.domain.utils.ShareUtils;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 
@@ -39,9 +47,8 @@ public class ArticalActivity extends AppCompatActivity {
     private static final String TAG = ArticalActivity.class.getCanonicalName();
 
     private String mHeader;
-    private String mArticalId;
+    private String mArticleId;
 
-    //    private CollapsingToolbarLayout mCollapsingToolbarLayout;
     private net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout mMultiLineToolbarLayout;
     private ImageView mArticalImage;
     private TextView mArticalContent;
@@ -59,27 +66,53 @@ public class ArticalActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                fab.setImageResource(R.mipmap.ic_favorite_white);
+                Snackbar.make(view, R.string.favorite_prompt, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+                User user = UserInfoKeeper.readUserInfo(ArticalActivity.this);
+                final RequestFavorite requestFavorite = new RequestFavorite();
+                requestFavorite.setUser_id(user.getId()+"");
+                requestFavorite.setArticle_id(mArticleId);
+                NetworkManager.newsItemService.postFavorite(requestFavorite)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<ResponseFavorite>() {
+                            @Override
+                            public void onCompleted() {
+
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+
+                            }
+
+                            @Override
+                            public void onNext(ResponseFavorite responseFavorite) {
+                                if (responseFavorite.getResponse_code() == 201){
+                                    Log.d(TAG, "success");
+                                } else if (responseFavorite.getResponse_code() >= 400) {
+                                    Log.d(TAG, "wrong");
+                                }
+                            }
+                        });
             }
         });
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
         if (getIntent() != null) {
-            mHeader = getIntent().getStringExtra("Header");
-            mArticalId = getIntent().getStringExtra("ArticalId");
+            mHeader = getIntent().getStringExtra(Constants.INTENT_EXTRA_HEADER);
+            mArticleId = getIntent().getStringExtra(Constants.INTENT_EXTRA_ARTICLE_ID);
         }
 
-//        mArticalContent = (TextView) findViewById(R.id.tv_artical);
         mArticalSource = (TextView) findViewById(R.id.tv_artical_source);
         mArticalEditor = (TextView) findViewById(R.id.tv_artical_editor);
         mArticalDate = (TextView) findViewById(R.id.tv_artical_date);
-//        mCollapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar_layout);
         mMultiLineToolbarLayout =
                 (net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout)
                         findViewById(R.id.collapsing_toolbar_layout);
@@ -99,51 +132,88 @@ public class ArticalActivity extends AppCompatActivity {
         webSettings.setDefaultTextEncodingName("utf-8");
 
 
-//        mCollapsingToolbarLayout.setTitle(mHeader);
         mMultiLineToolbarLayout.setTitle(mHeader);
-        loadArtical(mArticalId);
+        loadArticle(mArticleId);
     }
 
 
-    private void loadArtical(String id) {
-        Log.d(TAG, "load artical" + id);
-        NetworkManager.newsItemService.getArtical(id)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        new Action1<NewDetail>() {
-                            @Override
-                            public void call(NewDetail newDetail) {
-                                Log.d(TAG, newDetail.getPicture_src());
-                                Log.d(TAG, newDetail.getContent());
-                                Log.d(TAG, "type: " + newDetail.getType());
-                                Log.d(TAG, "video: " + newDetail.getVideo());
-//                                mArticalContent.setText(
-//                                        Html.fromHtml(
-//                                                newDetail.getContent(),
-//                                                new ImageGetter(mArticalContent, ArticalActivity.this),
-//                                                null));
-                                mWebView.loadData(buildHtmlContent(newDetail.getContent()), "text/html; charset=uft-8", "utf-8");
-                                mArticalSource.setText("来源 " + newDetail.getSource());
-                                mArticalDate.setText(newDetail.getDate());
-                                mArticalEditor.setText(newDetail.getEditor());
-                                Glide.with(ArticalActivity.this)
-                                        .load(newDetail.getPicture_src())
-                                        .centerCrop()
-                                        .thumbnail(0.5f)
-                                        .into(mArticalImage);
+    private void loadArticle(String id) {
+        Log.d(TAG, "load article" + id);
+        if (App.getInstance().isUserLogin()){
+            User user = UserInfoKeeper.readUserInfo(this);
+            RequestUser requestUser = new RequestUser();
+            requestUser.setUser_id(user.getId()+"");
+            Log.d(TAG, "User Login. ID: " + user.getId());
+            NetworkManager.newsItemService.getArticleWithUserId(id, requestUser)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            new Action1<NewDetail>() {
+                                @Override
+                                public void call(NewDetail newDetail) {
+                                    Log.d(TAG, newDetail.getPicture_src());
+                                    Log.d(TAG, newDetail.getContent());
+                                    Log.d(TAG, "type: " + newDetail.getType());
+                                    Log.d(TAG, "video: " + newDetail.getVideo());
+                                    Log.d(TAG, "favorite: " + newDetail.getFavorite());
+                                    mWebView.loadData(buildHtmlContent(newDetail.getContent()), "text/html; charset=uft-8", "utf-8");
+                                    mArticalSource.setText("来源 " + newDetail.getSource());
+                                    mArticalDate.setText(newDetail.getDate());
+                                    mArticalEditor.setText(newDetail.getEditor());
+                                    Glide.with(ArticalActivity.this)
+                                            .load(newDetail.getPicture_src())
+                                            .centerCrop()
+                                            .thumbnail(0.5f)
+                                            .into(mArticalImage);
+                                }
+                            }, new Action1<Throwable>() {
+                                @Override
+                                public void call(Throwable throwable) {
+                                    Toast.makeText(
+                                            ArticalActivity.this,
+                                            R.string.info_news_list_load_error,
+                                            Toast.LENGTH_SHORT)
+                                            .show();
+                                }
                             }
-                        }, new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                Toast.makeText(
-                                        ArticalActivity.this,
-                                        R.string.info_news_list_load_error,
-                                        Toast.LENGTH_SHORT)
-                                        .show();
+                    );
+        } else {
+            Log.d(TAG, "User Not Login");
+            NetworkManager.newsItemService.getArtical(id)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            new Action1<NewDetail>() {
+                                @Override
+                                public void call(NewDetail newDetail) {
+                                    Log.d(TAG, newDetail.getPicture_src());
+                                    Log.d(TAG, newDetail.getContent());
+                                    Log.d(TAG, "type: " + newDetail.getType());
+                                    Log.d(TAG, "video: " + newDetail.getVideo());
+                                    Log.d(TAG, "favorite: " + newDetail.getFavorite());
+                                    mWebView.loadData(buildHtmlContent(newDetail.getContent()), "text/html; charset=uft-8", "utf-8");
+                                    mArticalSource.setText("来源 " + newDetail.getSource());
+                                    mArticalDate.setText(newDetail.getDate());
+                                    mArticalEditor.setText(newDetail.getEditor());
+                                    Glide.with(ArticalActivity.this)
+                                            .load(newDetail.getPicture_src())
+                                            .centerCrop()
+                                            .thumbnail(0.5f)
+                                            .into(mArticalImage);
+                                }
+                            }, new Action1<Throwable>() {
+                                @Override
+                                public void call(Throwable throwable) {
+                                    Toast.makeText(
+                                            ArticalActivity.this,
+                                            R.string.info_news_list_load_error,
+                                            Toast.LENGTH_SHORT)
+                                            .show();
+                                }
                             }
-                        }
-                );
+                    );
+        }
+
     }
 
     private class ImageGetter implements Html.ImageGetter {
