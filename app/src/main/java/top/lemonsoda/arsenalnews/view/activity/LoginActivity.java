@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -55,6 +56,7 @@ public class LoginActivity extends AppCompatActivity {
     private SsoHandler mSsoHandler;
 
     private LocalBroadcastManager mLocalBroadcastManager;
+    private Subscriber<User> userSubscriber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,12 +94,44 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        initSubscriber();
+
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         mAuthInfo = new AuthInfo(this, Constants.APP_KEY, Constants.REDIRECT_URL, Constants.SCOPE);
         mSsoHandler = new SsoHandler(LoginActivity.this, mAuthInfo);
 
         mAccessToken = AccessTokenKeeper.readAccessToken(this);
         updateLoginView(mAccessToken.isSessionValid());
+    }
+
+    private void initSubscriber() {
+        userSubscriber = new Subscriber<User>() {
+            @Override
+            public void onCompleted() {
+                Intent intent = new Intent(Constants.LOGIN_EVENT_INTENT_ACTION);
+                intent.putExtra(Constants.INTENT_LOGIN_EXTRA_KEY, true);
+                mLocalBroadcastManager.sendBroadcast(intent);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(
+                        LoginActivity.this,
+                        "Wrong in get user profile",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNext(User user) {
+                UserInfoKeeper.writeUserInfo(LoginActivity.this, user);
+                mUserName.setText(user.getScreen_name());
+                Glide.with(LoginActivity.this)
+                        .load(user.getProfile_image_url())
+                        .asBitmap()
+                        .centerCrop()
+                        .into(target);
+            }
+        };
     }
 
     private void setupLoginView(boolean isLogin) {
@@ -131,34 +165,8 @@ public class LoginActivity extends AppCompatActivity {
                 }
             } else {
                 final long uid = Long.parseLong(mAccessToken.getUid());
-                WeiboNetworkManager.userService.getUser(uid, mAccessToken.getToken())
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                new Action1<User>() {
-                                    @Override
-                                    public void call(User user) {
-                                        UserInfoKeeper.writeUserInfo(LoginActivity.this, user);
-                                        mUserName.setText(user.getScreen_name());
-                                        Glide.with(LoginActivity.this)
-                                                .load(user.getProfile_image_url())
-                                                .asBitmap()
-                                                .centerCrop()
-                                                .into(target);
-                                        Intent intent = new Intent(Constants.LOGIN_EVENT_INTENT_ACTION);
-                                        intent.putExtra(Constants.INTENT_LOGIN_EXTRA_KEY, true);
-                                        mLocalBroadcastManager.sendBroadcast(intent);
-                                    }
-                                }, new Action1<Throwable>() {
-                                    @Override
-                                    public void call(Throwable throwable) {
-                                        Toast.makeText(
-                                                LoginActivity.this,
-                                                "Wrong in get user profile",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                        );
+                WeiboNetworkManager.getInstance().getUser(
+                        userSubscriber, uid, mAccessToken.getToken());
             }
         }
     }

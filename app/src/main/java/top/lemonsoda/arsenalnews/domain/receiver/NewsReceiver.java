@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import java.util.Iterator;
 
 import cn.jpush.android.api.JPushInterface;
+import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.view.activity.ArticleActivity;
 
 /**
@@ -40,8 +41,8 @@ public class NewsReceiver extends BroadcastReceiver {
             try {
                 JSONObject jsonObject = new JSONObject(extras);
                 Bundle b = new Bundle();
-                b.putString("Header", jsonObject.getString("Header"));
-                b.putString("ArticalId", jsonObject.getString("ArticalId"));
+                b.putString(Constants.INTENT_EXTRA_HEADER, jsonObject.getString("Header"));
+                b.putString(Constants.INTENT_EXTRA_ARTICLE_ID, jsonObject.getString("ArticalId"));
                 i.putExtras(b);
                 //i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);

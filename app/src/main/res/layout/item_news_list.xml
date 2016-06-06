@@ -25,11 +25,10 @@
 
                 <TextView
                     android:id="@+id/tv_news_list_title"
-                    style="@style/TextAppearance.AppCompat.Body1"
+                    style="@style/TextAppearance.AppCompat.Widget.ActionMode.Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="温格：有信心续约桑切斯厄齐尔"
-                    android:textSize="22sp" />
+                    android:text="温格：有信心续约桑切斯厄齐尔" />
 
                 <TextView
                     android:id="@+id/tv_news_list_src"
@@ -37,8 +36,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/margin_8dp"
-                    android:text="來自 伦敦晚旗报"
-                    android:textSize="16sp" />
+                    android:text="來自 伦敦晚旗报" />
 
             </LinearLayout>
 

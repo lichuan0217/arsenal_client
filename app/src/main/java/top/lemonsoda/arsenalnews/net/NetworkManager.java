@@ -12,6 +12,7 @@ import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -49,11 +50,11 @@ public class NetworkManager {
         return SingletonHolder.INSTANCE;
     }
 
-    public void getNewsItem(Subscriber<List<NewItem>> subscriber, int page) {
+    public void getNewsItem(Observer<List<NewItem>> observer, int page) {
         newsService.getNewsItem(page)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(subscriber);
+                .subscribe(observer);
     }
 
     public void getArticle(Subscriber<NewDetail> subscriber, String id) {
@@ -68,6 +69,13 @@ public class NetworkManager {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(subscriber);
+    }
+
+    public void getFavorites(Observer<List<NewItem>> observer, String id) {
+        newsService.getFavorites(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(observer);
     }
 
     public void postFavorite(Subscriber<ResponseFavorite> subscriber, RequestFavorite favorite) {
@@ -95,6 +103,9 @@ public class NetworkManager {
         @Headers("Content-Type: application/json")
         @POST("artical/{id}/")
         Observable<NewDetail> getArticleWithUserId(@Path("id") String id, @Body RequestUser user);
+
+        @GET("favorites/{id}/")
+        Observable<List<NewItem>> getFavorites(@Path("id") String id);
 
         @Headers("Content-Type: application/json")
         @POST("favorites/")

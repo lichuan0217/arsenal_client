@@ -32,4 +32,6 @@ public class Constants {
     public static final String INTENT_EXTRA_HEADER = "header";
     public static final String INTENT_EXTRA_ARTICLE_ID = "article_id";
 
+    public static final String INTENT_EXTRA_USER_ID = "user_id";
+
 }

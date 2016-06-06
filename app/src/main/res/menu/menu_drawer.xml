@@ -6,8 +6,12 @@
         android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
-            android:icon="@mipmap/drawer_action_home"
+            android:icon="@mipmap/ic_home_black_36dp"
             android:title="首页" />
+        <item
+            android:id="@+id/nav_favorite"
+            android:icon="@mipmap/ic_favorite_black_36dp"
+            android:title="我的收藏"/>
     </group>
 
     <group

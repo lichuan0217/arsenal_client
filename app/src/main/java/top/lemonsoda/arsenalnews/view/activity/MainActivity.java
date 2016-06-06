@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -17,6 +19,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,10 +34,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
+import rx.Observer;
 import rx.Subscriber;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
 import top.lemonsoda.arsenalnews.bean.User;
+import top.lemonsoda.arsenalnews.domain.application.App;
 import top.lemonsoda.arsenalnews.domain.db.ItemDatabaseManager;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
 import top.lemonsoda.arsenalnews.domain.utils.BitmapUtils;
@@ -43,7 +48,7 @@ import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.NewsListAdapter;
 
 public class MainActivity extends AppCompatActivity
-        implements SwipeRefreshLayout.OnRefreshListener, NewsListAdapter.OnNewsItemClickListener {
+        implements SwipeRefreshLayout.OnRefreshListener, NewsListAdapter.OnNewsItemClickListener, NewsListAdapter.OnLoadMoreListener {
 
     private static final String TAG = MainActivity.class.getCanonicalName();
 
@@ -67,6 +72,9 @@ public class MainActivity extends AppCompatActivity
     private LocalBroadcastManager mLocalBroadcastManager;
 
     private Subscriber<List<NewItem>> newsItemSubscriber;
+    private Subscriber<List<NewItem>> newsItemLoadMoreSubscriber;
+    private Observer<List<NewItem>> newsItemObserver;
+    private Observer<List<NewItem>> newsItemLoadMoreObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,15 +96,17 @@ public class MainActivity extends AppCompatActivity
         mNewsListSwipeRefreshLayout.setOnRefreshListener(this);
         mItemDatabaseManager = new ItemDatabaseManager(this);
         initData();
+        initObserver();
 
         mLayoutManager = new LinearLayoutManager(this);
         mNewsListRecyclerView.setLayoutManager(mLayoutManager);
 
-        mAdapter = new NewsListAdapter(this, mNewsList);
+        mAdapter = new NewsListAdapter(this, mNewsList, mNewsListRecyclerView);
         mAdapter.setOnNewsItemClickListener(this);
+        mAdapter.setOnLoadMoreListener(this);
         mNewsListRecyclerView.setAdapter(mAdapter);
 
-
+        mNewsListSwipeRefreshLayout.setRefreshing(true);
         onRefresh();
     }
 
@@ -114,7 +124,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -123,13 +132,16 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_refresh) {
+            Log.d(TAG, "Action Refresh");
+            mLayoutManager.scrollToPositionWithOffset(0, 0);
+            mNewsListSwipeRefreshLayout.setRefreshing(true);
+            onRefresh();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-
 
 
     private void setupNavigationView() {
@@ -138,7 +150,7 @@ public class MainActivity extends AppCompatActivity
         mIntentFilter.addAction(Constants.LOGIN_EVENT_INTENT_ACTION);
         mReceiver = new LoginEventReceiver();
         mLocalBroadcastManager.registerReceiver(mReceiver, mIntentFilter);
-        User user = UserInfoKeeper.readUserInfo(this);
+        final User user = UserInfoKeeper.readUserInfo(this);
         if (!TextUtils.isEmpty(user.getScreen_name())) {
             mTextViewUserName.setText(user.getScreen_name());
         }
@@ -154,7 +166,6 @@ public class MainActivity extends AppCompatActivity
         mImgAvatar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                mDrawerLayout.closeDrawer(GravityCompat.START);
                 switchActivity(LoginActivity.class);
             }
         });
@@ -163,12 +174,26 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public boolean onNavigationItemSelected(MenuItem item) {
                         if (item.isChecked()) {
+                            Log.d(TAG, "checked");
                             item.setChecked(false);
                         } else {
+                            Log.d(TAG, "unchecked");
                             item.setChecked(true);
                         }
-                        mDrawerLayout.closeDrawer(GravityCompat.START);
+                        mDrawerLayout.closeDrawers();
                         switch (item.getItemId()) {
+                            case R.id.nav_favorite:
+                                if (!App.getInstance().isUserLogin()) {
+                                    Snackbar.make(
+                                            mNavigationView,
+                                            R.string.favorite_login_prompt,
+                                            Snackbar.LENGTH_SHORT)
+                                            .setAction("Action", null).show();
+                                    return true;
+                                }
+                                Bundle bundle = new Bundle();
+                                bundle.putString(Constants.INTENT_EXTRA_USER_ID, user.getId() + "");
+                                return switchActivity(FavoriteActivity.class, bundle);
                             case R.id.nav_about:
                                 return switchActivity(AboutActivity.class);
                         }
@@ -178,25 +203,37 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setupToggle() {
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+        // Initializing Drawer Layout and ActionBarToggle
+        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(
                 this, mDrawerLayout, mToolbar,
-                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawerLayout.setDrawerListener(toggle);
-        toggle.syncState();
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                // Code here will be triggered once the drawer closes as we don't want anything to happen so we leave this blank
+                super.onDrawerClosed(drawerView);
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                // Code here will be triggered once the drawer open as we don't want anything to happen so we leave this blank
+                super.onDrawerOpened(drawerView);
+            }
+        };
+
+        //Setting the actionbarToggle to drawer layout
+        mDrawerLayout.setDrawerListener(actionBarDrawerToggle);
+
+        //calling sync state is necessary or else your hamburger icon wont show up
+        actionBarDrawerToggle.syncState();
     }
 
     private void initData() {
         mItemDatabaseManager.getItemFromDB(mNewsList);
     }
 
-    @Override
-    public void onRefresh() {
-        mItemPage = 0;
-        getNewsItem(mItemPage);
-    }
-
-    private void getNewsItem(int page){
-        newsItemSubscriber = new Subscriber<List<NewItem>>() {
+    private void initObserver() {
+        newsItemObserver = new Observer<List<NewItem>>() {
             @Override
             public void onCompleted() {
                 mNewsListSwipeRefreshLayout.setRefreshing(false);
@@ -223,7 +260,60 @@ public class MainActivity extends AppCompatActivity
                 mItemPage++;
             }
         };
-        NetworkManager.getInstance().getNewsItem(newsItemSubscriber, page);
+
+        newsItemLoadMoreObserver = new Observer<List<NewItem>>() {
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "onComplete()");
+                mAdapter.notifyDataSetChanged();
+                mAdapter.setLoaded();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "onError()");
+                mNewsList.remove(mNewsList.size() - 1);
+                mAdapter.notifyItemRemoved(mNewsList.size());
+                Toast.makeText(
+                        MainActivity.this,
+                        R.string.info_news_list_load_error,
+                        Toast.LENGTH_SHORT)
+                        .show();
+                mAdapter.setLoaded();
+            }
+
+            @Override
+            public void onNext(List<NewItem> newItems) {
+                Log.d(TAG, "onNext()");
+                mNewsList.remove(mNewsList.size() - 1);
+                mAdapter.notifyItemRemoved(mNewsList.size());
+                if (newItems.size() == 0) {
+                    Toast.makeText(
+                            MainActivity.this,
+                            getString(R.string.info_news_list_load_no_more),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                mNewsList.addAll(newItems);
+                mItemPage++;
+            }
+        };
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
+    public void onRefresh() {
+        Log.d(TAG, "onRefresh()");
+        mItemPage = 0;
+        NetworkManager.getInstance().getNewsItem(newsItemObserver, mItemPage);
     }
 
     private void saveData(List<NewItem> newItems) {
@@ -233,10 +323,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onItemClick(View view, int pos) {
         String header = mNewsList.get(pos).getHeader();
-        String articalId = mNewsList.get(pos).getArticalId();
+        String articleId = mNewsList.get(pos).getArticalId();
         Intent intent = new Intent(MainActivity.this, ArticleActivity.class);
         intent.putExtra(Constants.INTENT_EXTRA_HEADER, header);
-        intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articalId);
+        intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articleId);
         startActivity(intent);
     }
 
@@ -245,12 +335,30 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    private boolean switchActivity(Class clazz, Bundle bundle) {
+        Intent intent = new Intent(MainActivity.this, clazz);
+        intent.putExtras(bundle);
+        startActivity(intent);
+        return true;
+    }
+
+    @Override
+    public void onLoadMore() {
+        mNewsList.add(null);
+        mAdapter.notifyItemInserted(mNewsList.size() - 1);
+
+        //Load Data
+        Log.d(TAG, "onLoadMore: page " + mItemPage);
+        NetworkManager.getInstance().getNewsItem(
+                newsItemLoadMoreObserver, mItemPage);
+    }
+
     private class LoginEventReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             boolean isLogin = intent.getBooleanExtra(Constants.INTENT_LOGIN_EXTRA_KEY, false);
-            if (isLogin){
+            if (isLogin) {
                 Toast.makeText(MainActivity.this, "login", Toast.LENGTH_SHORT).show();
                 User user = UserInfoKeeper.readUserInfo(MainActivity.this);
                 mTextViewUserName.setText(user.getScreen_name());

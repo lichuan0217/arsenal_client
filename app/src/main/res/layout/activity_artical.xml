@@ -21,7 +21,7 @@
             android:fitsSystemWindows="true"
             app:contentScrim="?attr/colorPrimary"
             app:expandedTitleMarginStart="@dimen/margin_16dp"
-            app:expandedTitleTextAppearance="@style/CollapsingToolbarTitleSyste.ArticalView"
+            app:expandedTitleTextAppearance="@style/CollapsingToolbarTitleStyle.ArticleView"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
             <ImageView
