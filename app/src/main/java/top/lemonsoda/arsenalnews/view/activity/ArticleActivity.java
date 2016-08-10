@@ -26,6 +26,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import rx.Observer;
 import rx.Subscriber;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewDetail;
@@ -57,13 +58,13 @@ public class ArticleActivity extends AppCompatActivity {
 
     private Subscriber<NewDetail> articleSubscriber;
     private Subscriber<NewDetail> articleWithUserSubscriber;
-    private Subscriber<ResponseFavorite> postFavoriteSubscriber;
-    private Subscriber<ResponseFavorite> deleteFavoriteSubscriber;
+    private Observer<ResponseFavorite> postFavoriteObserver;
+    private Observer<ResponseFavorite> deleteFavoriteObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_artical);
+        setContentView(R.layout.activity_article);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -73,15 +74,15 @@ public class ArticleActivity extends AppCompatActivity {
             mArticleId = getIntent().getStringExtra(Constants.INTENT_EXTRA_ARTICLE_ID);
         }
 
-        mArticleSource = (TextView) findViewById(R.id.tv_artical_source);
-        mArticleEditor = (TextView) findViewById(R.id.tv_artical_editor);
-        mArticleDate = (TextView) findViewById(R.id.tv_artical_date);
+        mArticleSource = (TextView) findViewById(R.id.tv_article_source);
+        mArticleEditor = (TextView) findViewById(R.id.tv_article_editor);
+        mArticleDate = (TextView) findViewById(R.id.tv_article_date);
         mMultiLineToolbarLayout =
                 (net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout)
                         findViewById(R.id.collapsing_toolbar_layout);
         mArticleImage = (ImageView) findViewById(R.id.iv_artical_header);
 
-        mWebView = (WebView) findViewById(R.id.wv_artical);
+        mWebView = (WebView) findViewById(R.id.wv_article);
         WebSettings webSettings = mWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
 //        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
@@ -113,13 +114,13 @@ public class ArticleActivity extends AppCompatActivity {
                 User user = UserInfoKeeper.readUserInfo(ArticleActivity.this);
                 if (isFavorite) {
                     NetworkManager.getInstance().deleteFavorite(
-                            deleteFavoriteSubscriber, user.getId() + "", mArticleId);
+                            deleteFavoriteObserver, user.getId() + "", mArticleId);
                     return;
                 }
                 final RequestFavorite requestFavorite = new RequestFavorite();
                 requestFavorite.setUser_id(user.getId() + "");
                 requestFavorite.setArticle_id(mArticleId);
-                NetworkManager.getInstance().postFavorite(postFavoriteSubscriber, requestFavorite);
+                NetworkManager.getInstance().postFavorite(postFavoriteObserver, requestFavorite);
             }
         });
     }
@@ -199,7 +200,7 @@ public class ArticleActivity extends AppCompatActivity {
             }
         };
 
-        postFavoriteSubscriber = new Subscriber<ResponseFavorite>() {
+        postFavoriteObserver = new Observer<ResponseFavorite>() {
             @Override
             public void onCompleted() {
                 isFavorite = true;
@@ -224,7 +225,7 @@ public class ArticleActivity extends AppCompatActivity {
             }
         };
 
-        deleteFavoriteSubscriber = new Subscriber<ResponseFavorite>() {
+        deleteFavoriteObserver = new Observer<ResponseFavorite>() {
             @Override
             public void onCompleted() {
                 isFavorite = false;

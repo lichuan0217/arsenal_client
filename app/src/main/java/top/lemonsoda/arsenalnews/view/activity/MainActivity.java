@@ -4,12 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.util.Pair;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -24,36 +25,37 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
 import rx.Observer;
-import rx.Subscriber;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
 import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.application.App;
 import top.lemonsoda.arsenalnews.domain.db.ItemDatabaseManager;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
-import top.lemonsoda.arsenalnews.domain.utils.BitmapUtils;
+import top.lemonsoda.arsenalnews.domain.utils.BitmapSaver;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.NewsListAdapter;
 
 public class MainActivity extends AppCompatActivity
-        implements SwipeRefreshLayout.OnRefreshListener, NewsListAdapter.OnNewsItemClickListener, NewsListAdapter.OnLoadMoreListener {
+        implements SwipeRefreshLayout.OnRefreshListener,
+        NewsListAdapter.OnNewsItemClickListener,
+        NewsListAdapter.OnLoadMoreListener {
 
     private static final String TAG = MainActivity.class.getCanonicalName();
 
     private LinearLayoutManager mLayoutManager;
-    private List<NewItem> mNewsList = new ArrayList<NewItem>();
+    private List<NewItem> mNewsList = new ArrayList<>();
     private NewsListAdapter mAdapter;
     private RecyclerView mNewsListRecyclerView;
     private SwipeRefreshLayout mNewsListSwipeRefreshLayout;
@@ -66,15 +68,16 @@ public class MainActivity extends AppCompatActivity
     private ImageView mImgAvatar;
     private TextView mTextViewUserName;
     private Toolbar mToolbar;
+    private ProgressBar mProgressBarLoading;
 
     private IntentFilter mIntentFilter;
     private LoginEventReceiver mReceiver;
     private LocalBroadcastManager mLocalBroadcastManager;
 
-    private Subscriber<List<NewItem>> newsItemSubscriber;
-    private Subscriber<List<NewItem>> newsItemLoadMoreSubscriber;
     private Observer<List<NewItem>> newsItemObserver;
     private Observer<List<NewItem>> newsItemLoadMoreObserver;
+
+    private BitmapSaver mBitmapSaver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +86,8 @@ public class MainActivity extends AppCompatActivity
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
+        mBitmapSaver = BitmapSaver.getInstance(this);
+        mBitmapSaver.setFileName(Constants.AVATAR_NAME);
         mNewsListSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.srl_news_item);
         mNewsListRecyclerView = (RecyclerView) findViewById(R.id.rv_news_list);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -90,12 +95,16 @@ public class MainActivity extends AppCompatActivity
         mHeaderView = mNavigationView.getHeaderView(0);
         mImgAvatar = (ImageView) mHeaderView.findViewById(R.id.img_avatar);
         mTextViewUserName = (TextView) mHeaderView.findViewById(R.id.tv_user_name);
+        mProgressBarLoading = (ProgressBar) findViewById(R.id.pb_loading_news_list);
         setupNavigationView();
         setupToggle();
 
         mNewsListSwipeRefreshLayout.setOnRefreshListener(this);
         mItemDatabaseManager = new ItemDatabaseManager(this);
+
         initData();
+        switchEmptyView();
+
         initObserver();
 
         mLayoutManager = new LinearLayoutManager(this);
@@ -106,7 +115,15 @@ public class MainActivity extends AppCompatActivity
         mAdapter.setOnLoadMoreListener(this);
         mNewsListRecyclerView.setAdapter(mAdapter);
 
-        mNewsListSwipeRefreshLayout.setRefreshing(true);
+        // Refresh the data list
+        if (!mNewsListSwipeRefreshLayout.isRefreshing()) {
+            mNewsListSwipeRefreshLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    mNewsListSwipeRefreshLayout.setRefreshing(true);
+                }
+            });
+        }
         onRefresh();
     }
 
@@ -120,6 +137,12 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         JPushInterface.onPause(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        mAdapter.stopBannerScrollController();
+        super.onDestroy();
     }
 
     @Override
@@ -155,12 +178,8 @@ public class MainActivity extends AppCompatActivity
             mTextViewUserName.setText(user.getScreen_name());
         }
 
-        File avatar_file = new File(Constants.AVATAR_FILE);
-        if (avatar_file.exists()) {
-            Bitmap bitmap = BitmapUtils.getLocalBitmap(Constants.AVATAR_FILE);
-            if (bitmap != null) {
-                mImgAvatar.setImageBitmap(bitmap);
-            }
+        if (mBitmapSaver.exists()) {
+            mImgAvatar.setImageBitmap(mBitmapSaver.load());
         }
 
         mImgAvatar.setOnClickListener(new View.OnClickListener() {
@@ -173,13 +192,6 @@ public class MainActivity extends AppCompatActivity
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem item) {
-                        if (item.isChecked()) {
-                            Log.d(TAG, "checked");
-                            item.setChecked(false);
-                        } else {
-                            Log.d(TAG, "unchecked");
-                            item.setChecked(true);
-                        }
                         mDrawerLayout.closeDrawers();
                         switch (item.getItemId()) {
                             case R.id.nav_favorite:
@@ -196,6 +208,8 @@ public class MainActivity extends AppCompatActivity
                                 return switchActivity(FavoriteActivity.class, bundle);
                             case R.id.nav_about:
                                 return switchActivity(AboutActivity.class);
+                            case R.id.nav_settings:
+                                return switchActivity(SettingsActivity.class);
                         }
                         return true;
                     }
@@ -222,7 +236,7 @@ public class MainActivity extends AppCompatActivity
         };
 
         //Setting the actionbarToggle to drawer layout
-        mDrawerLayout.setDrawerListener(actionBarDrawerToggle);
+        mDrawerLayout.addDrawerListener(actionBarDrawerToggle);
 
         //calling sync state is necessary or else your hamburger icon wont show up
         actionBarDrawerToggle.syncState();
@@ -256,6 +270,7 @@ public class MainActivity extends AppCompatActivity
                 }
                 saveData(newItems);
                 mNewsList.addAll(newItems);
+                switchEmptyView();
                 mAdapter.notifyDataSetChanged();
                 mItemPage++;
             }
@@ -330,6 +345,17 @@ public class MainActivity extends AppCompatActivity
         startActivity(intent);
     }
 
+    @Override
+    public void onItemClick(NewsListAdapter.NewsItemViewHolder holder, int pos) {
+        String header = mNewsList.get(pos).getHeader();
+        String articleId = mNewsList.get(pos).getArticalId();
+        Intent intent = new Intent(MainActivity.this, ArticleActivity.class);
+        intent.putExtra(Constants.INTENT_EXTRA_HEADER, header);
+        intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articleId);
+
+        startActivity(intent);
+    }
+
     private boolean switchActivity(Class clazz) {
         startActivity(new Intent(MainActivity.this, clazz));
         return true;
@@ -351,6 +377,16 @@ public class MainActivity extends AppCompatActivity
         Log.d(TAG, "onLoadMore: page " + mItemPage);
         NetworkManager.getInstance().getNewsItem(
                 newsItemLoadMoreObserver, mItemPage);
+    }
+
+    private void switchEmptyView() {
+        if (mNewsList.size() == 0) {
+            mNewsListRecyclerView.setVisibility(View.GONE);
+            mProgressBarLoading.setVisibility(View.VISIBLE);
+        } else {
+            mNewsListRecyclerView.setVisibility(View.VISIBLE);
+            mProgressBarLoading.setVisibility(View.GONE);
+        }
     }
 
     private class LoginEventReceiver extends BroadcastReceiver {

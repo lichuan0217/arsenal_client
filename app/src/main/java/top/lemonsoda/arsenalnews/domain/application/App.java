@@ -2,10 +2,15 @@ package top.lemonsoda.arsenalnews.domain.application;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
+import android.util.Log;
 
 import cn.jpush.android.api.JPushInterface;
 import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
+import top.lemonsoda.arsenalnews.domain.utils.Constants;
 
 /**
  * Created by Chuan on 4/19/16.
@@ -22,9 +27,13 @@ public class App extends Application {
 
         mContext = this;
         instance = this;
-        JPushInterface.setDebugMode(true);    // 设置开启日志,发布时请关闭日志
-        JPushInterface.init(this);            // 初始化 JPush
-
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean notify = sharedPreferences.getBoolean(Constants.PREF_KEY_NOITFY, true);
+        Log.d("Application chuanl test", "Notify: " + notify);
+        if (notify) {
+            JPushInterface.setDebugMode(true);    // 设置开启日志,发布时请关闭日志
+            JPushInterface.init(this);            // 初始化 JPush
+        }
         initLogin();
     }
 

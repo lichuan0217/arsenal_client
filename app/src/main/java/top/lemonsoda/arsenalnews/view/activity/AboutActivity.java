@@ -25,7 +25,7 @@ public class AboutActivity extends AppCompatActivity {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         mCollapsingToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing_toolbar_layout);
         mTextViewVersion = (TextView)findViewById(R.id.tv_version);
-        mTextViewVersion.setText("Version 0.1");
+        mTextViewVersion.setText(getString(R.string.app_version));
         mCollapsingToolbarLayout.setTitle(getString(R.string.title_activity_about));
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -38,7 +38,6 @@ public class AboutActivity extends AppCompatActivity {
         switch (item.getItemId()){
             case android.R.id.home:
                 onBackPressed();
-//                this.finish();
                 return true;
         }
         return super.onOptionsItemSelected(item);

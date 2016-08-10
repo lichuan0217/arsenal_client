@@ -34,4 +34,6 @@ public class Constants {
 
     public static final String INTENT_EXTRA_USER_ID = "user_id";
 
+    public static final String PREF_KEY_NOITFY = "key_notify_news";
+
 }

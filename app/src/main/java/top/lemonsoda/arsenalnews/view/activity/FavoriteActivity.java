@@ -9,6 +9,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -19,9 +20,7 @@ import butterknife.ButterKnife;
 import rx.Observer;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.NewItem;
-import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.application.App;
-import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 import top.lemonsoda.arsenalnews.view.adapter.FavoriteNewsListAdapter;
@@ -120,5 +119,15 @@ public class FavoriteActivity extends AppCompatActivity implements SwipeRefreshL
         intent.putExtra(Constants.INTENT_EXTRA_HEADER, header);
         intent.putExtra(Constants.INTENT_EXTRA_ARTICLE_ID, articleId);
         startActivity(intent);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                this.finish();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

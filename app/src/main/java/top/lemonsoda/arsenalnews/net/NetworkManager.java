@@ -2,6 +2,8 @@ package top.lemonsoda.arsenalnews.net;
 
 import java.util.List;
 
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -34,9 +36,17 @@ public class NetworkManager {
     private NewsService newsService;
 
     private NetworkManager() {
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+        // add logging as last interceptor
+        httpClient.addInterceptor(logging);
+
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
+                .client(httpClient.build())
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
         newsService = retrofit.create(NewsService.class);
@@ -78,18 +88,18 @@ public class NetworkManager {
                 .subscribe(observer);
     }
 
-    public void postFavorite(Subscriber<ResponseFavorite> subscriber, RequestFavorite favorite) {
+    public void postFavorite(Observer<ResponseFavorite> observer, RequestFavorite favorite) {
         newsService.postFavorite(favorite)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(subscriber);
+                .subscribe(observer);
     }
 
-    public void deleteFavorite(Subscriber<ResponseFavorite> subscriber, String user_id, String article_id) {
+    public void deleteFavorite(Observer<ResponseFavorite> observer, String user_id, String article_id) {
         newsService.deleteFavorite(user_id, article_id)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(subscriber);
+                .subscribe(observer);
     }
 
 

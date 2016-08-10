@@ -1,7 +1,5 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -9,7 +7,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -25,22 +22,14 @@ import com.sina.weibo.sdk.auth.WeiboAuthListener;
 import com.sina.weibo.sdk.auth.sso.SsoHandler;
 import com.sina.weibo.sdk.exception.WeiboException;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-
 import de.hdodenhof.circleimageview.CircleImageView;
 import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
 import top.lemonsoda.arsenalnews.R;
 import top.lemonsoda.arsenalnews.bean.User;
 import top.lemonsoda.arsenalnews.domain.application.App;
 import top.lemonsoda.arsenalnews.domain.preferences.AccessTokenKeeper;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
-import top.lemonsoda.arsenalnews.domain.utils.BitmapUtils;
+import top.lemonsoda.arsenalnews.domain.utils.BitmapSaver;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.net.WeiboNetworkManager;
 
@@ -57,6 +46,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private LocalBroadcastManager mLocalBroadcastManager;
     private Subscriber<User> userSubscriber;
+
+    private BitmapSaver mBitmapSaver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +86,9 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         initSubscriber();
+
+        mBitmapSaver = BitmapSaver.getInstance(this);
+        mBitmapSaver.setFileName(Constants.AVATAR_NAME);
 
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         mAuthInfo = new AuthInfo(this, Constants.APP_KEY, Constants.REDIRECT_URL, Constants.SCOPE);
@@ -152,17 +146,13 @@ public class LoginActivity extends AppCompatActivity {
         setupLoginView(isLogin);
         if (!isLogin) {
             // Remove the avatar file
-            removeImage(Constants.AVATAR_NAME);
+            mBitmapSaver.delete();
         } else {
             User user = UserInfoKeeper.readUserInfo(this);
-            File avatar_file = new File(Constants.AVATAR_FILE);
 
-            if (!TextUtils.isEmpty(user.getScreen_name()) && avatar_file.exists()) {
+            if (!TextUtils.isEmpty(user.getScreen_name()) && mBitmapSaver.exists()) {
                 mUserName.setText(user.getScreen_name());
-                Bitmap bitmap = BitmapUtils.getLocalBitmap(Constants.AVATAR_FILE);
-                if (bitmap != null) {
-                    mAvatar.setImageBitmap(bitmap);
-                }
+                mAvatar.setImageBitmap(mBitmapSaver.load());
             } else {
                 final long uid = Long.parseLong(mAccessToken.getUid());
                 WeiboNetworkManager.getInstance().getUser(
@@ -178,55 +168,12 @@ public class LoginActivity extends AppCompatActivity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    storeImage(bitmap, Constants.AVATAR_NAME);
+                    mBitmapSaver.save(bitmap);
                 }
             }).start();
         }
     };
 
-    private void storeImage(Bitmap bitmap, String filename) {
-
-        try {
-            File arsenalStorageDir = new File(Constants.STORAGE_PATH);
-            boolean dirReady = true;
-            if (!arsenalStorageDir.exists()) {
-                dirReady = arsenalStorageDir.mkdirs();
-                if (dirReady) {
-                    Log.d("Login", "mkdirs() True");
-                } else {
-                    Log.d("Login", "mkdirs() False");
-                }
-            }
-            if (dirReady) {
-                File file = new File(arsenalStorageDir, filename);
-                if (!file.exists()) {
-                    Log.d("Login", filename + " does not exist!");
-                    FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, bufferedOutputStream);
-
-                    bufferedOutputStream.flush();
-                    bufferedOutputStream.close();
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            Log.e("Login", "Exception: " + e.getMessage());
-        }
-
-    }
-
-    private void removeImage(String filename) {
-        File storageDir = new File(Constants.STORAGE_PATH);
-        if (storageDir.exists()) {
-            File file = new File(storageDir, filename);
-            if (file.exists()) {
-                file.delete();
-            }
-        }
-    }
 
     /**
      * 当 SSO 授权 Activity 退出时，该函数被调用。
