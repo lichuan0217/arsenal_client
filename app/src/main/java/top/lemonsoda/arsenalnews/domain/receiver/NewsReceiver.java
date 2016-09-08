@@ -29,8 +29,8 @@ public class NewsReceiver extends BroadcastReceiver {
 
         if (JPushInterface.ACTION_NOTIFICATION_RECEIVED.equals(intent.getAction())) {
             Log.d(TAG, "[NewsReceiver] 接收到推送下来的通知");
-            int notifactionId = bundle.getInt(JPushInterface.EXTRA_NOTIFICATION_ID);
-            Log.d(TAG, "[NewsReceiver] 接收到推送下来的通知的ID: " + notifactionId);
+            int notificationId = bundle.getInt(JPushInterface.EXTRA_NOTIFICATION_ID);
+            Log.d(TAG, "[NewsReceiver] 接收到推送下来的通知的ID: " + notificationId);
         } else if (JPushInterface.ACTION_NOTIFICATION_OPENED.equals(intent.getAction())) {
             Log.d(TAG, "[NewsReceiver] 用户点击打开了通知");
 

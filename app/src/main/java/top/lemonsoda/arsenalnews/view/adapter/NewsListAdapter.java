@@ -237,7 +237,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             // 添加dot到线性布局中
             dot = new View(mContext);
             dot.setBackgroundResource(R.drawable.banner_dot_bg_selector);
-            params = new LinearLayout.LayoutParams(5, 5);
+            params = new LinearLayout.LayoutParams(10, 10);
             params.leftMargin = 10;
             dot.setEnabled(false);
             dot.setLayoutParams(params);
@@ -260,7 +260,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             public void handleMessage(Message msg) {
                 switch (msg.what) {
                     case UPDATE_VIEWPAGER:
-//                        Log.d(TAG, "Update ViewPager ...");
                         int newIndex = holder.viewPager.getCurrentItem() + 1;
                         holder.viewPager.setCurrentItem(newIndex);
                 }

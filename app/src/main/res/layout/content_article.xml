@@ -12,44 +12,37 @@
 
     <TextView
         android:id="@+id/tv_article_source"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
-        tools:text="来源"
+        android:layout_marginBottom="@dimen/margin_8dp"
         android:textSize="16sp"
-        android:layout_marginBottom="@dimen/margin_8dp"/>
+        android:visibility="gone"
+        tools:text="来源" />
 
     <TextView
         android:id="@+id/tv_article_date"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+        android:layout_marginBottom="@dimen/margin_16dp"
         android:text="2016-01-02"
         android:textSize="16sp"
-        android:layout_marginBottom="@dimen/margin_16dp"/>
-
-    <!--<TextView-->
-        <!--android:id="@+id/tv_artical"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:text="@string/test_artical_content"-->
-        <!--style="@style/TextAppearance.AppCompat.Body1"-->
-        <!--android:textSize="20sp"/>-->
+        android:visibility="gone" />
 
     <WebView
         android:id="@+id/wv_article"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/tv_article_editor"
+        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
-        tools:text="(编辑)"
+        android:layout_marginTop="@dimen/margin_8dp"
         android:textSize="16sp"
-        android:layout_marginTop="@dimen/margin_8dp"/>
-
-
+        android:visibility="gone"
+        tools:text="(编辑)" />
 </LinearLayout>

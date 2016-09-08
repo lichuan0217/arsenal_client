@@ -7,10 +7,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.util.Pair;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -315,11 +312,23 @@ public class MainActivity extends AppCompatActivity
         };
     }
 
+    private long exitTime = 0;
+
     @Override
     public void onBackPressed() {
         if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
             mDrawerLayout.closeDrawer(GravityCompat.START);
             return;
+        }
+        if ((System.currentTimeMillis() - exitTime) > 3000) {
+            Snackbar.make(
+                    mNewsListSwipeRefreshLayout,
+                    getString(R.string.snake_exit_once_more),
+                    Snackbar.LENGTH_LONG).show();
+            exitTime = System.currentTimeMillis();
+            return;
+        } else {
+            finish();
         }
         super.onBackPressed();
     }
@@ -378,6 +387,7 @@ public class MainActivity extends AppCompatActivity
         NetworkManager.getInstance().getNewsItem(
                 newsItemLoadMoreObserver, mItemPage);
     }
+
 
     private void switchEmptyView() {
         if (mNewsList.size() == 0) {

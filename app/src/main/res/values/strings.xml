@@ -9,6 +9,7 @@
     <string name="info_news_list_load_error">网络加载出错...</string>
     <string name="info_news_list_load_no_more">没有更多新闻...</string>
     <string name="title_activity_artical">ArticalActivity</string>
+    <string name="snake_exit_once_more">再按一次退出应用</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

@@ -1,14 +1,17 @@
 package top.lemonsoda.arsenalnews.view.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
@@ -18,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,6 +42,7 @@ import top.lemonsoda.arsenalnews.domain.application.App;
 import top.lemonsoda.arsenalnews.domain.preferences.UserInfoKeeper;
 import top.lemonsoda.arsenalnews.domain.utils.Constants;
 import top.lemonsoda.arsenalnews.domain.utils.ShareUtils;
+import top.lemonsoda.arsenalnews.domain.utils.Utils;
 import top.lemonsoda.arsenalnews.net.NetworkManager;
 
 public class ArticleActivity extends AppCompatActivity {
@@ -64,6 +69,14 @@ public class ArticleActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.black_trans80));
+        }
+
         setContentView(R.layout.activity_article);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -80,7 +93,7 @@ public class ArticleActivity extends AppCompatActivity {
         mMultiLineToolbarLayout =
                 (net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout)
                         findViewById(R.id.collapsing_toolbar_layout);
-        mArticleImage = (ImageView) findViewById(R.id.iv_artical_header);
+        mArticleImage = (ImageView) findViewById(R.id.iv_article_header);
 
         mWebView = (WebView) findViewById(R.id.wv_article);
         WebSettings webSettings = mWebView.getSettings();
@@ -94,6 +107,18 @@ public class ArticleActivity extends AppCompatActivity {
 //        }
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setDefaultTextEncodingName("utf-8");
+
+        mWebView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                Log.d(TAG, "Load Page Finished");
+                mArticleDate.setVisibility(View.VISIBLE);
+                mArticleEditor.setVisibility(View.VISIBLE);
+                mArticleSource.setVisibility(View.VISIBLE);
+                mWebView.setVisibility(View.VISIBLE);
+            }
+        });
 
         mMultiLineToolbarLayout.setTitle(mHeader);
         initSubscriber();
@@ -185,7 +210,7 @@ public class ArticleActivity extends AppCompatActivity {
                 Log.d(TAG, "video: " + newDetail.getVideo());
                 Log.d(TAG, "favorite: " + newDetail.getFavorite());
                 if (newDetail.getFavorite()) {
-                    favoriteButton.setImageResource(R.mipmap.ic_heart_red);
+                    favoriteButton.setImageResource(R.mipmap.ic_like_filled);
                     isFavorite = true;
                 }
                 mWebView.loadData(buildHtmlContent(newDetail.getContent()), "text/html; charset=uft-8", "utf-8");
@@ -204,7 +229,7 @@ public class ArticleActivity extends AppCompatActivity {
             @Override
             public void onCompleted() {
                 isFavorite = true;
-                favoriteButton.setImageResource(R.mipmap.ic_heart_red);
+                favoriteButton.setImageResource(R.mipmap.ic_like_filled);
                 Snackbar.make(favoriteButton, R.string.favorite_prompt, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
@@ -229,7 +254,7 @@ public class ArticleActivity extends AppCompatActivity {
             @Override
             public void onCompleted() {
                 isFavorite = false;
-                favoriteButton.setImageResource(R.mipmap.ic_heart_outline_grey);
+                favoriteButton.setImageResource(R.mipmap.ic_like_outline);
                 Snackbar.make(favoriteButton, R.string.favorite_cancel_prompt, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
@@ -351,6 +376,11 @@ public class ArticleActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_article, menu);
+        MenuItem shareItem = menu.findItem(R.id.action_share);
+        if (shareItem != null) {
+            Utils.tintMenuIcon(this, shareItem, android.R.color.white);
+        }
+
         return true;
     }
 
@@ -358,12 +388,24 @@ public class ArticleActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                this.finish();
+                onBackPressed();
                 return true;
             case R.id.action_share:
                 ShareUtils.share(this);
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isTaskRoot()) {
+            Log.d(TAG, "This is the root task");
+            Intent intent = new Intent(ArticleActivity.this, SplashActivity.class);
+            startActivity(intent);
+        } else {
+            Log.d(TAG, "This is not the root task");
+        }
+        super.onBackPressed();
     }
 }
