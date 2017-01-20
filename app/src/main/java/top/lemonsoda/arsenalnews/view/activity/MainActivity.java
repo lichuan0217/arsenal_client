@@ -138,6 +138,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG, "onDestroy()");
         mAdapter.stopBannerScrollController();
         super.onDestroy();
     }
@@ -408,14 +409,14 @@ public class MainActivity extends AppCompatActivity
                 Toast.makeText(MainActivity.this, "login", Toast.LENGTH_SHORT).show();
                 User user = UserInfoKeeper.readUserInfo(MainActivity.this);
                 mTextViewUserName.setText(user.getScreen_name());
-                Glide.with(MainActivity.this)
+                Glide.with(getApplicationContext())
                         .load(user.getProfile_image_url())
                         .asBitmap()
                         .centerCrop()
                         .into(mImgAvatar);
             } else {
                 mImgAvatar.setImageResource(R.mipmap.avatar);
-                mTextViewUserName.setText("Android Studio");
+                mTextViewUserName.setText("Arsenal Fans");
                 Toast.makeText(MainActivity.this, "logout", Toast.LENGTH_SHORT).show();
             }
         }

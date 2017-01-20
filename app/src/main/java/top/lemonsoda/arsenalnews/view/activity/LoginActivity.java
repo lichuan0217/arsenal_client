@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +41,9 @@ public class LoginActivity extends AppCompatActivity {
     TextView mUserName;
     CircleImageView mAvatar;
 
+    RelativeLayout mLoginLayout;
+    RelativeLayout mLogoutLayout;
+
     private AuthInfo mAuthInfo;
     private Oauth2AccessToken mAccessToken;
     private SsoHandler mSsoHandler;
@@ -62,6 +66,8 @@ public class LoginActivity extends AppCompatActivity {
         mAvatar = (CircleImageView) findViewById(R.id.img_login_avatar);
         mWeiboLogin = (Button) findViewById(R.id.btn_login_weibo);
         mWeiboLogout = (Button) findViewById(R.id.btn_logout_weibo);
+        mLoginLayout = (RelativeLayout) findViewById(R.id.rl_login);
+        mLogoutLayout = (RelativeLayout) findViewById(R.id.rl_logout);
 
         mWeiboLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,15 +136,11 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setupLoginView(boolean isLogin) {
         if (isLogin) {
-            mWeiboLogout.setVisibility(View.VISIBLE);
-            mUserName.setVisibility(View.VISIBLE);
-            mAvatar.setVisibility(View.VISIBLE);
-            mWeiboLogin.setVisibility(View.GONE);
+            mLoginLayout.setVisibility(View.VISIBLE);
+            mLogoutLayout.setVisibility(View.GONE);
         } else {
-            mWeiboLogout.setVisibility(View.GONE);
-            mUserName.setVisibility(View.GONE);
-            mAvatar.setVisibility(View.GONE);
-            mWeiboLogin.setVisibility(View.VISIBLE);
+            mLogoutLayout.setVisibility(View.VISIBLE);
+            mLoginLayout.setVisibility(View.GONE);
         }
     }
 

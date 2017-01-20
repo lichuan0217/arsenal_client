@@ -28,6 +28,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".view.activity.SplashActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,11 +37,14 @@
         </activity>
         <activity
             android:name=".view.activity.MainActivity"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.Detail" />
         <activity
             android:name=".view.activity.ArticleActivity"
             android:label="@string/title_activity_artical"
             android:parentActivityName=".view.activity.MainActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.Detail">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -50,7 +54,8 @@
         <activity
             android:name=".view.activity.AboutActivity"
             android:label="@string/title_activity_about"
-            android:parentActivityName=".view.activity.MainActivity">
+            android:parentActivityName=".view.activity.MainActivity"
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
@@ -58,7 +63,8 @@
         <activity
             android:name=".view.activity.FavoriteActivity"
             android:label="@string/title_activity_favorite"
-            android:parentActivityName=".view.activity.MainActivity">
+            android:parentActivityName=".view.activity.MainActivity"
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
@@ -66,7 +72,8 @@
         <activity
             android:name=".view.activity.SettingsActivity"
             android:label="@string/title_activity_setting"
-            android:parentActivityName=".view.activity.MainActivity">
+            android:parentActivityName=".view.activity.MainActivity"
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
@@ -75,7 +82,8 @@
         <activity
             android:name=".view.activity.LoginActivity"
             android:label="@string/title_activity_login"
-            android:parentActivityName=".view.activity.MainActivity">
+            android:parentActivityName=".view.activity.MainActivity"
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="top.lemonsoda.arsenalnews.view.activity.MainActivity" />
@@ -95,6 +103,14 @@
                 <category android:name="${applicationId}" />
             </intent-filter>
         </receiver>
+
+
+        <!-- Weibo Login Configuration -->
+        <activity
+            android:name="com.sina.weibo.sdk.component.WeiboSdkBrowser"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- JPush Configuration Start -->
         <!-- Required SDK核心功能 -->
@@ -178,12 +194,6 @@
             android:value="17d0b76f74e8ec889461904d" />
         <!-- JPush Configuration End -->
 
-        <!-- Weibo Login Configuration -->
-        <activity
-            android:name="com.sina.weibo.sdk.component.WeiboSdkBrowser"
-            android:configChanges="keyboardHidden|orientation"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
 
     </application>
 
