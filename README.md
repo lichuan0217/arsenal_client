@@ -1,5 +1,7 @@
 #Arsenal News
 
+Please check the new version [Arsenal news android client](https://github.com/lichuan0217/arsenal_news), which use MVP and Dagger2.
+
 Arsenal News is an open source news display android application.
 
 
